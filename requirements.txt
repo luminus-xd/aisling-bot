@@ -1,0 +1,5 @@
+discord.py[voice]
+google-generativeai
+python-dotenv
+requests
+# voicevox-core==0.16.0 は直接Dockerfileでインストールします 
