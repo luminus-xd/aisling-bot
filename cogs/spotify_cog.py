@@ -6,6 +6,16 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import os
 from discord import ui # uiモジュールをインポート
 
+class DeleteMessageView(ui.View):
+    def __init__(self, timeout=180):
+        super().__init__(timeout=timeout)
+        delete_button = ui.Button(label="削除", style=discord.ButtonStyle.danger, custom_id="delete_preview_message")
+        delete_button.callback = self.delete_message
+        self.add_item(delete_button)
+
+    async def delete_message(self, interaction: discord.Interaction):
+        await interaction.message.delete()
+
 class SpotifyTrackView(ui.View):
     def __init__(self, tracks, visible_to_others: bool, timeout=180):
         super().__init__(timeout=timeout)
@@ -20,10 +30,27 @@ class SpotifyTrackView(ui.View):
             await interaction.response.send_message("表示するプレビューがありません。", ephemeral=True)
             return
 
-        urls = "\n".join([track['external_urls']['spotify'] for track in self.tracks])
-        await interaction.response.send_message(f"**検索結果のSpotify URL:**\n{urls}", ephemeral=not self.visible_to_others)
+        # 元のメッセージの「プレビューで表示」ボタンを無効化
         self.url_button.disabled = True
-        await interaction.message.edit(view=self)
+        if interaction.message: # interaction.messageが存在することを確認
+            try:
+                await interaction.message.edit(view=self)
+            except discord.NotFound:
+                # メッセージが既に削除されているなどの理由で編集できない場合
+                pass 
+            except discord.Forbidden:
+                # 権限がない場合
+                pass # またはログ出力など
+
+        urls = "\n".join([track['external_urls']['spotify'] for track in self.tracks])
+
+        if self.visible_to_others:
+            # 他の人にも見える場合は削除ボタン付きのViewでメッセージを送信
+            delete_view = DeleteMessageView()
+            await interaction.response.send_message(f"**検索結果のSpotify URL:**\n{urls}", view=delete_view, ephemeral=False)
+        else:
+            # ephemeralなメッセージの場合は削除ボタン不要
+            await interaction.response.send_message(f"**検索結果のSpotify URL:**\n{urls}", ephemeral=True)
 
 
 class SpotifyCog(commands.Cog):
