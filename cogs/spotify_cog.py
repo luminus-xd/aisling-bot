@@ -47,8 +47,8 @@ class SpotifyCog(commands.Cog):
                 album_name = track['album']['name']
                 track_url = track['external_urls']['spotify']
                 embed.add_field(name=f"{i+1}. {track_name} - {artist_name}", 
-                                value=f"アルバム: {album_name}
-[Spotifyで聴く]({track_url})", 
+                                value=f"アルバム: {album_name}\n"
+                                      f"[Spotifyで聴く]({track_url})", 
                                 inline=False)
             
             await interaction.followup.send(embed=embed, ephemeral=False) # 結果は全員に見えるようにする

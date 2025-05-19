@@ -59,6 +59,10 @@ class BasicCommandsCog(commands.Cog):
         embed.add_field(name="質問コマンド", value=" ", inline=False)
         embed.add_field(name="`/ask [質問]`", value="つむぎに質問し、応答をテキストと音声で返します。", inline=True)
         
+        # SpotifyCog
+        embed.add_field(name="音楽コマンド", value=" ", inline=False)
+        embed.add_field(name="`/search_spotify [曲名/アーティスト]`", value="Spotifyで曲を検索します。", inline=True)
+        
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
