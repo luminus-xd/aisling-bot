@@ -146,6 +146,9 @@ class AICommandsCog(commands.Cog):
 
 def setup_cogs(bot: discord.Client, voice_handler: VoiceVoxHandler, gemini_handler: GeminiHandler):
     """コマンドツリーにCogを登録する"""
+    # 一度コマンドツリーをクリアする（同じコマンドが重複登録されないように）
+    bot.tree.clear_commands(guild=None)
+    
     basic_cog = BasicCommandsCog(bot)
     voice_cog = VoiceCommandsCog(bot, voice_handler)
     ai_cog = AICommandsCog(bot, gemini_handler, voice_handler)
@@ -154,14 +157,17 @@ def setup_cogs(bot: discord.Client, voice_handler: VoiceVoxHandler, gemini_handl
     tree = bot.tree
     
     # BasicCommandsCogのコマンドを追加
+    print("BasicCommandsCogのコマンドを追加中...")
     tree.add_command(basic_cog.hello_command)
     tree.add_command(basic_cog.join_command)
     tree.add_command(basic_cog.leave_command)
     
     # VoiceCommandsCogのコマンドを追加
+    print("VoiceCommandsCogのコマンドを追加中...")
     tree.add_command(voice_cog.speak_command)
     
     # AICommandsCogのコマンドを追加
+    print("AICommandsCogのコマンドを追加中...")
     tree.add_command(ai_cog.ask_command)
     
     print("すべてのコマンドをコマンドツリーに追加しました。") 
