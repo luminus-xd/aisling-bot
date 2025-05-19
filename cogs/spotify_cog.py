@@ -66,10 +66,11 @@ class SpotifyCog(commands.Cog):
             for i, track_item in enumerate(tracks):
                 track_name = track_item['name']
                 artist_name = ", ".join([artist['name'] for artist in track_item['artists']])
-                album_name = track_item['album']['name']
+                album_name_raw = track_item['album']['name']
+                album_display = f"`{album_name_raw}`" if album_name_raw else "アルバムなし"
                 track_url = track_item['external_urls']['spotify']
                 embed.add_field(name=f"{i+1}. {track_name} - {artist_name}",
-                                value=f"アルバム: {album_name}\\n"
+                                value=f"アルバム: {album_display}\n"
                                       f"[Spotifyで聴く]({track_url})",
                                 inline=False)
             
