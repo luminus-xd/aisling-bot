@@ -46,17 +46,17 @@ async def on_ready():
     try:
         # コマンドの設定
         print("コマンドを設定しています...")
-        setup_cogs(client, voice_handler, gemini_handler, client.tree)
+        setup_cogs(client, voice_handler, gemini_handler, tree)
         
         # コマンドツリーの状態を確認
-        commands = client.tree.get_commands()
+        commands = tree.get_commands()
         print(f"コマンドツリーに登録されているコマンド数: {len(commands)}")
         for cmd in commands:
             print(f"登録済みコマンド: {cmd.name}")
         
         # グローバルにコマンドを同期（全サーバーに適用）
         print("スラッシュコマンドを同期しています...")
-        synced = await client.tree.sync()
+        synced = await tree.sync()
         print(f"同期完了: {len(synced)}個のコマンドを同期しました")
         for cmd in synced:
             print(f"同期されたコマンド: {cmd.name}")
