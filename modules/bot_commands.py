@@ -144,17 +144,14 @@ class AICommandsCog(commands.Cog):
                 await interaction.followup.send(f"申し訳ありません、処理中にエラーが発生しました。 {e}")
 
 
-def setup_cogs(bot: discord.Client, voice_handler: VoiceVoxHandler, gemini_handler: GeminiHandler):
+def setup_cogs(bot: discord.Client, voice_handler: VoiceVoxHandler, gemini_handler: GeminiHandler, tree: app_commands.CommandTree):
     """コマンドツリーにCogを登録する"""
     # 一度コマンドツリーをクリアする（同じコマンドが重複登録されないように）
-    bot.tree.clear_commands(guild=None)
+    tree.clear_commands(guild=None)
     
     basic_cog = BasicCommandsCog(bot)
     voice_cog = VoiceCommandsCog(bot, voice_handler)
     ai_cog = AICommandsCog(bot, gemini_handler, voice_handler)
-    
-    # app_commandsツリーに各コマンドを追加
-    tree = bot.tree
     
     # BasicCommandsCogのコマンドを追加
     print("BasicCommandsCogのコマンドを追加中...")

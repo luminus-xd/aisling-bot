@@ -46,7 +46,7 @@ async def on_ready():
     try:
         # コマンドの設定
         print("コマンドを設定しています...")
-        setup_cogs(client, voice_handler, gemini_handler)
+        setup_cogs(client, voice_handler, gemini_handler, client.tree)
         
         # コマンドツリーの状態を確認
         commands = client.tree.get_commands()
