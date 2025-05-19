@@ -164,4 +164,4 @@ def setup_cogs(bot: discord.Client, voice_handler: VoiceVoxHandler, gemini_handl
     # AICommandsCogのコマンドを追加
     tree.add_command(ai_cog.ask_command)
     
-    return tree 
+    print("すべてのコマンドをコマンドツリーに追加しました。") 

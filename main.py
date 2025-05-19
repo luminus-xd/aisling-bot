@@ -45,11 +45,10 @@ async def on_ready():
     
     try:
         # コマンドの設定
-        global tree
-        tree = setup_cogs(client, voice_handler, gemini_handler)
+        setup_cogs(client, voice_handler, gemini_handler)
         
         # グローバルにコマンドを同期
-        await tree.sync()
+        await client.tree.sync()
         print("スラッシュコマンドを同期しました。")
     except Exception as e:
         print(f"コマンド同期中にエラーが発生しました: {e}")
