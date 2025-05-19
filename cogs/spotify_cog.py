@@ -25,12 +25,13 @@ class SpotifyCog(commands.Cog):
 
     @app_commands.command(name="search_spotify", description="Spotifyで曲を検索します。")
     @app_commands.describe(query="検索する曲名やアーティスト名")
-    async def search_spotify(self, interaction: discord.Interaction, query: str):
+    @app_commands.describe(visible_to_others="結果を他の人にも表示するかどうか (デフォルト: True)")
+    async def search_spotify(self, interaction: discord.Interaction, query: str, visible_to_others: bool = True):
         if not self.sp:
             await interaction.response.send_message("Spotify APIが初期化されていません。管理者にお問い合わせください。", ephemeral=True)
             return
 
-        await interaction.response.defer(ephemeral=True) # 処理に時間がかかる場合があるためdefer
+        await interaction.response.defer(ephemeral=not visible_to_others) # 処理に時間がかかる場合があるためdefer
 
         try:
             results = self.sp.search(q=query, limit=5, type='track', market='JP') # 日本のマーケットで検索、5件まで
@@ -51,7 +52,7 @@ class SpotifyCog(commands.Cog):
                                       f"[Spotifyで聴く]({track_url})", 
                                 inline=False)
             
-            await interaction.followup.send(embed=embed, ephemeral=False) # 結果は全員に見えるようにする
+            await interaction.followup.send(embed=embed, ephemeral=not visible_to_others) # 結果は指定に応じて表示
 
         except spotipy.SpotifyException as e:
             print(f"Spotify API検索エラー: {e}")
