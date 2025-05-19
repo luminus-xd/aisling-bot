@@ -40,6 +40,26 @@ class BasicCommandsCog(commands.Cog):
         else:
             await interaction.response.send_message("つむぎはボイスチャンネルに参加していません。", ephemeral=True)
 
+    @app_commands.command(name="help", description="利用可能なコマンドの一覧を表示します。")
+    async def help_command(self, interaction: discord.Interaction):
+        embed = discord.Embed(title="つむぎボット ヘルプ", description="利用可能なコマンドの一覧です。", color=discord.Color.blue())
+        
+        # BasicCommandsCog
+        embed.add_field(name="基本コマンド", value=" ", inline=False)
+        embed.add_field(name="`/hello`", value="つむぎが挨拶を返します。", inline=True)
+        embed.add_field(name="`/join`", value="つむぎをボイスチャンネルに参加させます。", inline=True)
+        embed.add_field(name="`/leave`", value="つむぎをボイスチャンネルから切断します。", inline=True)
+        
+        # VoiceCommandsCog
+        embed.add_field(name="音声コマンド", value=" ", inline=False)
+        embed.add_field(name="`/speak [テキスト]`", value="指定されたテキストを読み上げます。", inline=True)
+        
+        # AICommandsCog
+        embed.add_field(name="質問コマンド", value=" ", inline=False)
+        embed.add_field(name="`/ask [質問]`", value="つむぎに質問し、応答をテキストと音声で返します。", inline=True)
+        
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
 
 class VoiceCommandsCog(commands.Cog):
     def __init__(self, bot: discord.Client, voice_handler: VoiceVoxHandler):
@@ -158,6 +178,7 @@ def setup_cogs(bot: discord.Client, voice_handler: VoiceVoxHandler, gemini_handl
     tree.add_command(basic_cog.hello_command)
     tree.add_command(basic_cog.join_command)
     tree.add_command(basic_cog.leave_command)
+    tree.add_command(basic_cog.help_command)
     
     # VoiceCommandsCogのコマンドを追加
     print("VoiceCommandsCogのコマンドを追加中...")
