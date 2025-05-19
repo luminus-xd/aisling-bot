@@ -4,6 +4,7 @@ from discord.ext import commands
 import asyncio
 from modules.voicevox import VoiceVoxHandler
 from modules.gemini_api import GeminiHandler
+from cogs.spotify_cog import SpotifyCog
 
 class BasicCommandsCog(commands.Cog):
     def __init__(self, bot: discord.Client):
@@ -172,7 +173,8 @@ def setup_cogs(bot: discord.Client, voice_handler: VoiceVoxHandler, gemini_handl
     basic_cog = BasicCommandsCog(bot)
     voice_cog = VoiceCommandsCog(bot, voice_handler)
     ai_cog = AICommandsCog(bot, gemini_handler, voice_handler)
-    
+    spotify_cog = SpotifyCog(bot)
+
     # BasicCommandsCogのコマンドを追加
     print("BasicCommandsCogのコマンドを追加中...")
     tree.add_command(basic_cog.hello_command)
@@ -187,5 +189,9 @@ def setup_cogs(bot: discord.Client, voice_handler: VoiceVoxHandler, gemini_handl
     # AICommandsCogのコマンドを追加
     print("AICommandsCogのコマンドを追加中...")
     tree.add_command(ai_cog.ask_command)
+
+    # SpotifyCogのコマンドを追加
+    print("SpotifyCogのコマンドを追加中...")
+    tree.add_command(spotify_cog.search_spotify)
     
     print("すべてのコマンドをコマンドツリーに追加しました。") 
