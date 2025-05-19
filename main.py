@@ -27,6 +27,10 @@ event_handler = BotEventHandler(client)
 async def on_ready():
     print(f'{client.user} としてDiscordにログインしました！')
     
+    # ステータスメッセージの設定
+    activity = discord.Activity(type=discord.ActivityType.competing, name="カレー調理")
+    await client.change_presence(activity=activity)
+    
     # VOICEVOXの初期化
     initialized = await voice_handler.initialize()
     if initialized:
