@@ -47,7 +47,7 @@ class GeminiHandler:
             print(f"Gemini APIリクエスト中にエラーが発生しました: {e}")
             return False, f"申し訳ありません、処理中にエラーが発生しました。 {e}"
             
-    def split_text_for_speech(self, text: str, max_length: int = 100):
+    def split_text_for_speech(self, text: str, max_length: int = 120):
         """音声合成用にテキストを適切なセグメントに分割する"""
         if not text:
             return []

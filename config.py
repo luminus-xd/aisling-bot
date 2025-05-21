@@ -1,5 +1,5 @@
 # モデル名
-GEMINI_MODEL_NAME = "gemini-2.5-flash-preview-04-17" # Geminiモデル名
+GEMINI_MODEL_NAME = "gemini-2.5-flash-preview-05-20" # Geminiモデル名
 
 # システムプロンプト
 GEMINI_DEFAULT_PERSONA = """
