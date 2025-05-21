@@ -158,8 +158,9 @@ Botのコード (`main.py`) で必要なインテントが有効になってい�
     -   `text_to_speak` (必須): 読み上げる内容。
 -   `/ask [query]`: Geminiに質問し、テキストと音声で回答を得ます。
     -   `query` (必須): Geminiへの質問内容。
--   `/search_spotify [query]`: Spotifyで曲を検索します。
+-   `/search_spotify [query] (visible_to_others)`: Spotifyで曲を検索します。
     -   `query` (必須): 検索する曲名やアーティスト名。
+    -   `visible_to_others` (オプション, デフォルト: True): 検索結果を他の人にも表示するかどうかを指定します。`False` にすると自分だけに表示されます。
 
 ## 注意事項
 
