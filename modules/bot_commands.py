@@ -61,7 +61,7 @@ class BasicCommandsCog(commands.Cog):
         
         # SpotifyCog
         embed.add_field(name="音楽コマンド", value=" ", inline=False)
-        embed.add_field(name="`/search_spotify [曲名/アーティスト]`", value="Spotifyで曲を検索します。", inline=True)
+        embed.add_field(name="`/search_spotify [曲名/アーティスト] [visible_to_others]`", value="Spotifyで曲を検索します。`visible_to_others` (初期値: True) をFalseにすると、結果はあなただけに見えるようになります。", inline=True)
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
