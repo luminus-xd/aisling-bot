@@ -5,6 +5,7 @@ import asyncio
 from modules.voicevox import VoiceVoxHandler
 from modules.gemini_api import GeminiHandler
 from cogs.spotify_cog import SpotifyCog
+from cogs.youtube_cog import YouTubeCog
 
 class BasicCommandsCog(commands.Cog):
     def __init__(self, bot: discord.Client):
@@ -62,6 +63,10 @@ class BasicCommandsCog(commands.Cog):
         # SpotifyCog
         embed.add_field(name="音楽コマンド", value=" ", inline=False)
         embed.add_field(name="`/search_spotify [曲名/アーティスト] [visible_to_others]`", value="Spotifyで曲を検索します。`visible_to_others` (初期値: True) をFalseにすると、結果はあなただけに見えるようになります。", inline=True)
+        
+        # YouTubeCog
+        embed.add_field(name="YouTube要約コマンド", value=" ", inline=False)
+        embed.add_field(name="`/summarize_youtube [URL]`", value="YouTube動画のリンクから要約を生成します。", inline=True)
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -178,6 +183,7 @@ def setup_cogs(bot: discord.Client, voice_handler: VoiceVoxHandler, gemini_handl
     voice_cog = VoiceCommandsCog(bot, voice_handler)
     ai_cog = AICommandsCog(bot, gemini_handler, voice_handler)
     spotify_cog = SpotifyCog(bot)
+    youtube_cog = YouTubeCog(bot, gemini_handler, voice_handler)
 
     # BasicCommandsCogのコマンドを追加
     print("BasicCommandsCogのコマンドを追加中...")
@@ -197,5 +203,9 @@ def setup_cogs(bot: discord.Client, voice_handler: VoiceVoxHandler, gemini_handl
     # SpotifyCogのコマンドを追加
     print("SpotifyCogのコマンドを追加中...")
     tree.add_command(spotify_cog.search_spotify)
+    
+    # YouTubeCogのコマンドを追加
+    print("YouTubeCogのコマンドを追加中...")
+    tree.add_command(youtube_cog.summarize_youtube)
     
     print("すべてのコマンドをコマンドツリーに追加しました。") 
