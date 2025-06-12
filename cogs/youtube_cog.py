@@ -26,6 +26,12 @@ class YouTubeCog(commands.Cog):
                 return match.group(1)
         return ""
     
+    def get_youtube_thumbnail_url(self, video_id: str) -> str:
+        """YouTube動画IDからサムネイルURLを生成する"""
+        # 高画質サムネイル（maxresdefault）を優先
+        # 利用できない場合は自動的に標準画質（hqdefault）にフォールバック
+        return f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+    
     async def get_transcript(self, video_id: str) -> tuple[bool, str]:
         """YouTube動画の字幕を取得する"""
         try:
@@ -99,11 +105,14 @@ class YouTubeCog(commands.Cog):
             if success and summary:
                 # 応答をテキストで送信
                 embed = discord.Embed(
-                    title="YouTube動画要約",
+                    title="YouTube動画要約(動画リンク)",
                     description=summary,
                     color=discord.Color.red(),
                     url=url
                 )
+                # サムネイル画像を設定
+                thumbnail_url = self.get_youtube_thumbnail_url(video_id)
+                embed.set_thumbnail(url=thumbnail_url)
                 embed.set_footer(text=f"動画ID: {video_id} | 要約方法: {summary_method}ベース")
                 
                 max_length = 4096  # Discord embedの制限
