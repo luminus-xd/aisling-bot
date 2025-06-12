@@ -112,7 +112,7 @@ class YouTubeCog(commands.Cog):
                 )
                 # サムネイル画像を設定
                 thumbnail_url = self.get_youtube_thumbnail_url(video_id)
-                embed.set_thumbnail(url=thumbnail_url)
+                embed.set_image(url=thumbnail_url)
                 embed.set_footer(text=f"動画ID: {video_id} | 要約方法: {summary_method}ベース")
                 
                 max_length = 4096  # Discord embedの制限
