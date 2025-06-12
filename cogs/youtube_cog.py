@@ -113,7 +113,10 @@ class YouTubeCog(commands.Cog):
                     embed.description = chunks[0]
                     await interaction.followup.send(embed=embed)
                     
+                    # レート制限回避のため間隔を空けて送信
+                    import asyncio
                     for chunk in chunks[1:]:
+                        await asyncio.sleep(1)  # 1秒間隔で送信
                         await interaction.channel.send(chunk)
                 else:
                     await interaction.followup.send(embed=embed)
@@ -128,16 +131,24 @@ class YouTubeCog(commands.Cog):
                             
                         if interaction.guild.voice_client.is_playing():
                             import asyncio
-                            await asyncio.sleep(0.5)
+                            await asyncio.sleep(1)  # レート制限考慮で少し長めに待機
                             continue
                             
                         audio_data = await self.voice_handler.synthesize_voice(segment)
                         if audio_data:
                             await self.voice_handler.play_audio_in_vc(interaction.guild.voice_client, audio_data)
+                            await asyncio.sleep(0.5)  # 音声セグメント間に間隔を設ける
                             
             else:
                 await interaction.followup.send("要約の生成に失敗しました。")
                 
         except Exception as e:
             print(f"YouTube要約処理中にエラーが発生しました: {e}")
-            await interaction.followup.send(f"処理中にエラーが発生しました: {str(e)}")
+            
+            # Discord API レート制限エラーの場合
+            if "429" in str(e) or "Too Many Requests" in str(e):
+                await interaction.followup.send("現在Discord APIのレート制限により一時的に利用できません。しばらく待ってから再度お試しください。")
+            elif "HTTPException" in str(e):
+                await interaction.followup.send("Discord APIとの通信でエラーが発生しました。しばらく待ってから再度お試しください。")
+            else:
+                await interaction.followup.send(f"処理中にエラーが発生しました: {str(e)}")
