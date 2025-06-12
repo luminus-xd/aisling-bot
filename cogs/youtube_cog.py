@@ -75,7 +75,15 @@ class YouTubeCog(commands.Cog):
             await interaction.response.send_message("有効なYouTube URLを入力してください。", ephemeral=True)
             return
             
-        await interaction.response.defer()  # 処理時間がかかるため応答を保留
+        try:
+            await interaction.response.defer()  # 処理時間がかかるため応答を保留
+        except discord.errors.NotFound:
+            # Interactionがタイムアウトした場合の処理
+            print("Interaction timeout detected, attempting to send message directly")
+            try:
+                await interaction.channel.send("YouTube動画の要約処理を開始します...")
+            except:
+                return
         
         try:
             # まず字幕を取得を試行
@@ -120,7 +128,13 @@ class YouTubeCog(commands.Cog):
                     # 長すぎる場合は分割
                     chunks = [summary[i:i + max_length] for i in range(0, len(summary), max_length)]
                     embed.description = chunks[0]
-                    await interaction.followup.send(embed=embed)
+                    
+                    # Interactionが有効かチェックして送信
+                    try:
+                        await interaction.followup.send(embed=embed)
+                    except discord.errors.NotFound:
+                        # Interactionが無効な場合は直接チャンネルに送信
+                        await interaction.channel.send(embed=embed)
                     
                     # レート制限回避のため間隔を空けて送信
                     import asyncio
@@ -128,7 +142,12 @@ class YouTubeCog(commands.Cog):
                         await asyncio.sleep(1)  # 1秒間隔で送信
                         await interaction.channel.send(chunk)
                 else:
-                    await interaction.followup.send(embed=embed)
+                    # Interactionが有効かチェックして送信
+                    try:
+                        await interaction.followup.send(embed=embed)
+                    except discord.errors.NotFound:
+                        # Interactionが無効な場合は直接チャンネルに送信
+                        await interaction.channel.send(embed=embed)
                     
                 # ボイスチャンネルに参加していれば、要約を読み上げる
                 if interaction.guild.voice_client and interaction.guild.voice_client.is_connected() and self.voice_handler:
@@ -149,15 +168,25 @@ class YouTubeCog(commands.Cog):
                             await asyncio.sleep(0.5)  # 音声セグメント間に間隔を設ける
                             
             else:
-                await interaction.followup.send("要約の生成に失敗しました。")
+                try:
+                    await interaction.followup.send("要約の生成に失敗しました。")
+                except discord.errors.NotFound:
+                    await interaction.channel.send("要約の生成に失敗しました。")
                 
         except Exception as e:
             print(f"YouTube要約処理中にエラーが発生しました: {e}")
             
             # Discord API レート制限エラーの場合
+            error_message = ""
             if "429" in str(e) or "Too Many Requests" in str(e):
-                await interaction.followup.send("現在Discord APIのレート制限により一時的に利用できません。しばらく待ってから再度お試しください。")
+                error_message = "現在Discord APIのレート制限により一時的に利用できません。しばらく待ってから再度お試しください。"
             elif "HTTPException" in str(e):
-                await interaction.followup.send("Discord APIとの通信でエラーが発生しました。しばらく待ってから再度お試しください。")
+                error_message = "Discord APIとの通信でエラーが発生しました。しばらく待ってから再度お試しください。"
             else:
-                await interaction.followup.send(f"処理中にエラーが発生しました: {str(e)}")
+                error_message = f"処理中にエラーが発生しました: {str(e)}"
+                
+            # Interactionが有効かチェックして送信
+            try:
+                await interaction.followup.send(error_message)
+            except discord.errors.NotFound:
+                await interaction.channel.send(error_message)
