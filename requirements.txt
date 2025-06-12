@@ -3,4 +3,5 @@ google-generativeai
 python-dotenv
 requests
 spotipy
+youtube-transcript-api
 # voicevox-core==0.16.0 は直接Dockerfileでインストールします 
