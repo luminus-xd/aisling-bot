@@ -72,25 +72,29 @@ class YouTubeCog(commands.Cog):
         await interaction.response.defer()  # 処理時間がかかるため応答を保留
         
         try:
-            # 字幕を取得
-            success, transcript = await self.get_transcript(video_id)
-            if not success:
-                await interaction.followup.send(f"字幕の取得に失敗しました: {transcript}")
-                return
-                
-            # Gemini APIで要約を生成
-            summary_prompt = f"""以下のYouTube動画の字幕を日本語で要約してください。
+            # まず字幕を取得を試行
+            transcript_success, transcript = await self.get_transcript(video_id)
+            
+            if transcript_success:
+                # 字幕が取得できた場合は従来の方法で要約
+                summary_prompt = f"""以下のYouTube動画の字幕を日本語で要約してください。
 
-要約の要件:
-- 主要なポイントを3-5つの箇条書きで整理
-- 各ポイントは簡潔で分かりやすく
-- 動画の内容を的確に表現
-- 日本語で出力
+                要約の要件:
+                - 主要なポイントを3-5つの箇条書きで整理
+                - 各ポイントは簡潔で分かりやすく
+                - 動画の内容を的確に表現
+                - 日本語で出力
 
-字幕内容:
-{transcript}"""
+                字幕内容:
+                {transcript}"""
 
-            success, summary = await self.gemini_handler.generate_response(summary_prompt)
+                success, summary = await self.gemini_handler.generate_response(summary_prompt)
+                summary_method = "字幕"
+            else:
+                # 字幕が取得できない場合はYouTube URLを直接使用
+                print(f"字幕取得失敗、URL直接処理に切り替え: {transcript}")
+                success, summary = await self.gemini_handler.generate_youtube_summary(url)
+                summary_method = "動画"
             
             if success and summary:
                 # 応答をテキストで送信
@@ -100,7 +104,7 @@ class YouTubeCog(commands.Cog):
                     color=discord.Color.red(),
                     url=url
                 )
-                embed.set_footer(text=f"動画ID: {video_id}")
+                embed.set_footer(text=f"動画ID: {video_id} | 要約方法: {summary_method}ベース")
                 
                 max_length = 4096  # Discord embedの制限
                 if len(summary) > max_length:
