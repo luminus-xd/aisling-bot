@@ -46,6 +46,43 @@ class GeminiHandler:
         except Exception as e:
             print(f"Gemini APIリクエスト中にエラーが発生しました: {e}")
             return False, f"申し訳ありません、処理中にエラーが発生しました。 {e}"
+    
+    async def generate_youtube_summary(self, youtube_url: str):
+        """YouTube URLを使用してGemini APIで動画要約を生成する"""
+        if not self.initialized or not self.model:
+            print("Gemini APIが初期化されていません。")
+            return False, "Gemini APIが設定されていません。"
+            
+        try:
+            # YouTube動画の要約を生成するプロンプト
+            summary_prompt = """この YouTube 動画の内容を日本語で要約してください。
+
+            要約の要件:
+            - 主要なポイントを3-5つの箇条書きで整理
+            - 各ポイントは簡潔で分かりやすく
+            - 動画の内容を的確に表現
+            - 日本語で出力"""
+            
+            # YouTube URLを含むコンテンツでリクエスト
+            content = [
+                summary_prompt,
+                {"file_data": {"file_uri": youtube_url}}
+            ]
+            
+            response = await self.model.generate_content_async(content)
+            
+            if response.text:
+                return True, response.text
+            elif response.prompt_feedback and response.prompt_feedback.block_reason:
+                error_message = f"応答がブロックされました。理由: {response.prompt_feedback.block_reason}"
+                return False, error_message
+            else:
+                error_message = "有効な応答がありませんでした。"
+                return False, error_message
+                
+        except Exception as e:
+            print(f"YouTube動画要約中にエラーが発生しました: {e}")
+            return False, f"YouTube動画の処理中にエラーが発生しました: {str(e)}"
             
     def split_text_for_speech(self, text: str, max_length: int = 120):
         """音声合成用にテキストを適切なセグメントに分割する"""
