@@ -1,4 +1,4 @@
-# つむぎ - Discord AI Bot
+# aisling-bot - Discord AI Bot
 
 日本語を話すDiscord Bot。AI会話、音声読み上げ、音楽検索機能を提供します。
 
