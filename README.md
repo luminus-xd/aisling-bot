@@ -1,181 +1,85 @@
-# Gemini & VoiceVox Discord Bot
+# つむぎ - Discord AI Bot
 
-このBotは、Discord上でGemini APIを利用して質問応答を行い、`voicevox_core` ライブラリを利用してその応答を音声で読み上げることを目的としたPython製のBotです。
-KoyebなどのDockerベースのプラットフォームへのデプロイを想定しています。
+日本語を話すDiscord Bot。AI会話、音声読み上げ、音楽検索機能を提供します。
 
-## 特徴
+## 機能
 
--   DiscordのチャットでBotにスラッシュコマンドを使って指示できます。
--   Gemini APIを利用して、質問に対する回答を生成します。
--   Geminiの回答を `voicevox_core` を利用して音声で読み上げます。
+- **AI会話**: Google Gemini APIを使用した自然な日本語会話
+- **音声読み上げ**: VoiceVoxによる日本語音声合成
+- **音楽検索**: Spotify APIを使用した楽曲検索
+- **YouTube要約**: YouTube動画の内容を要約
 
-## 必要なもの
+## コマンド
 
--   Python 3.8以上 (Dockerfileでは `python:3.10-bookworm` を使用)
--   Discord Botトークン
--   Gemini APIキー
--   `ffmpeg` (音声再生に必要。Dockerfileに含まれます)
--   **VoiceVoxモデルファイル (`.vvm`)** (Open JTalk辞書はDockerfile内で自動ダウンロードされます)
--   **Spotify APIキー (オプション)**: Spotify検索機能を使用する場合に必要です。
-    -   `SPOTIPY_CLIENT_ID`
-    -   `SPOTIPY_CLIENT_SECRET`
+| コマンド | 説明 |
+|----------|------|
+| `/ask [質問]` | AIに質問（音声読み上げ付き） |
+| `/join` | ボイスチャンネルに参加 |
+| `/leave` | ボイスチャンネルから退出 |
+| `/speak [テキスト]` | テキストを音声で読み上げ |
+| `/search_spotify [検索語]` | Spotifyで楽曲検索 |
+| `/youtube_summarize [URL]` | YouTube動画を要約 |
 
-## Botの権限とスコープ
+## セットアップ
 
-BotをDiscordサーバーに導入する際には、以下のOAuth2スコープとBot権限を設定してください。
+### 必要なもの
 
-### OAuth2スコープ
+- Discord Bot Token
+- Google Gemini API Key
+- VoiceVoxモデルファイル（`.vvm`）
+- Spotify Client ID/Secret（オプション）
 
--   `bot`: Botとしてサーバーに参加するために必須です。
--   `applications.commands`: スラッシュコマンドを登録・利用するために必須です。
+### 環境変数
 
-### Bot権限 (インテント)
+```env
+DISCORD_BOT_TOKEN=your_discord_token
+GEMINI_API_KEY=your_gemini_key
+VOICEVOX_MODEL_ID=0
+VOICEVOX_STYLE_ID=8
+SPOTIPY_CLIENT_ID=your_spotify_id
+SPOTIPY_CLIENT_SECRET=your_spotify_secret
+```
 
-Botの動作には以下の権限が必要です。Bot招待URL生成時にこれらの権限を選択してください。
+### Docker実行
 
--   **必須の権限:**
-    -   `Send Messages` / `メッセージを送信`: テキストチャンネルでの応答に必要です。
-    -   `Embed Links` / `埋め込みリンク`: 検索結果などの情報をきれいに表示するために使用します。
-    -   `Connect` / `接続`: ボイスチャンネルへの接続に必要です。
-    -   `Speak` / `発言`: ボイスチャンネルでの音声読み上げに必要です。
--   **推奨される権限 (特定の機能に必要):**
-    -   `Read Message History` / `メッセージ履歴を読む`: Botが過去のメッセージをコンテキストとして利用する場合。 (現在の基本的なスラッシュコマンドのみの場合は必須ではないことが多いです)
-    -   `Use External Emojis` / `外部の絵文字の使用`: カスタム絵文字を使用する場合。
+```bash
+# ビルド
+docker build -t tsumugi-bot .
 
-**インテントの設定:**
-Botのコード (`main.py`) で必要なインテントが有効になっていることを確認してください。特に `intents.voice_states = True` はボイスチャンネル関連の機能に不可欠です。
+# 実行
+docker run --env-file .env tsumugi-bot
+```
 
-## セットアップ手順
+### ローカル開発
 
-1.  **リポジトリをクローンします (任意):**
-    ```bash
-    git clone <リポジトリのURL>
-    cd <リポジトリ名>
-    ```
+```bash
+# 依存関係インストール
+pip install -r requirements.txt
 
-2.  **VoiceVoxモデルファイルを配置します:**
-    プロジェクトのルートディレクトリに `voicevox_files/models/` ディレクトリを作成し、その中に使用したい話者のVoiceVoxモデルファイル (`.vvm`) を配置します。
-    Open JTalk辞書は `Dockerfile` によってビルド時に自動的にダウンロード・展開されますので、手動で配置する必要はありません。
+# 実行
+python main.py
+```
 
-    ```
-    your-bot-project/
-    ├── voicevox_files/
-    │   └── models/            <-- この中に .vvm ファイルを配置
-    │       ├── 0.vvm      (例: VOICEVOX_MODEL_ID が "0" の場合)
-    │       └── ...
-    ├── main.py
-    ├── requirements.txt
-    ├── Dockerfile
-    └── ... (その他のファイル)
-    ```
-    -   VoiceVoxモデルファイル (`.vvm`) は、[VOICEVOX公式サイトのキャラクターページ](https://voicevox.hiroshiba.jp/)などから入手してください。使用する`voicevox_core`のバージョンと互換性のあるモデルを選択してください。
+## Bot権限設定
 
-3.  **Pythonの仮想環境を作成し、アクティベートします (ローカルテスト用、推奨):**
-    ```bash
-    python -m venv venv
-    ```
-    Windowsの場合:
-    ```bash
-    .\\venv\\Scripts\\activate
-    ```
-    macOS/Linuxの場合:
-    ```bash
-    source venv/bin/activate
-    ```
+Discord Developer Portalで以下の権限を設定：
 
-4.  **必要なライブラリをインストールします (ローカルテスト用):**
-    ```bash
-    pip install -r requirements.txt
-    ```
-    ローカル環境でテストする場合、`ffmpeg` が別途必要です。OSに合わせてインストールしてください。
-    (例: macOSでは `brew install ffmpeg`, Debian/Ubuntuでは `sudo apt install ffmpeg`)
+**OAuth2 Scopes:**
+- `bot`
+- `applications.commands`
 
-5.  **設定ファイルを作成します (ローカルテスト用):**
-    プロジェクトのルートディレクトリに `.env` という名前のファイルを作成し、以下の内容を記述して、ご自身のAPIキーなどに置き換えてください。
-    Koyebにデプロイする際は、これらの値をKoyebの環境変数として設定します。
-
-    ```env
-    DISCORD_BOT_TOKEN=YOUR_DISCORD_BOT_TOKEN_HERE
-    GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
-    VOICEVOX_MODEL_ID="0" # VoiceVoxのモデルID (voicevox_files/models/ 内のファイル名 0.vvm, 1.vvm などと一致させる)
-    VOICEVOX_STYLE_ID=8   # VoiceVoxのスタイルID (例: ノーマルスタイル)
-    SPOTIPY_CLIENT_ID=YOUR_SPOTIFY_CLIENT_ID_HERE
-    SPOTIPY_CLIENT_SECRET=YOUR_SPOTIFY_CLIENT_SECRET_HERE
-    ```
-
-    -   `DISCORD_BOT_TOKEN`: あなたのDiscord Botのトークン。
-    -   `GEMINI_API_KEY`: あなたのGemini APIキー。
-    -   `VOICEVOX_MODEL_ID`: 使用するVoiceVoxのモデルID。`voicevox_files/models/` ディレクトリに配置したモデルファイル名 (`<ID>.vvm`) の `<ID>` と一致させてください。
-    -   `VOICEVOX_STYLE_ID`: 使用するVoiceVoxのスタイルID。モデルに対応するスタイルIDを指定してください。
-    -   `SPOTIPY_CLIENT_ID`: あなたのSpotifyアプリケーションのClient ID (Spotify検索機能を使用する場合)。
-    -   `SPOTIPY_CLIENT_SECRET`: あなたのSpotifyアプリケーションのClient Secret (Spotify検索機能を使用する場合)。
-
-## Botの実行 (ローカルでのDocker実行例)
-
-1.  **Dockerイメージをビルドします:**
-    ```bash
-    docker build -t my-discord-bot .
-    ```
-
-2.  **Dockerコンテナを実行します (環境変数を渡して):**
-    `.env` ファイルを使用する場合:
-    ```bash
-    docker run --env-file .env my-discord-bot
-    ```
-    または、個別に環境変数を指定する場合:
-    ```bash
-    docker run \\
-      -e DISCORD_BOT_TOKEN="your_token" \\
-      -e GEMINI_API_KEY="your_key" \\
-      -e VOICEVOX_MODEL_ID="0" \\
-      -e VOICEVOX_STYLE_ID="8" \\
-      -e SPOTIPY_CLIENT_ID="your_spotify_client_id" \\
-      -e SPOTIPY_CLIENT_SECRET="your_spotify_client_secret" \\
-      my-discord-bot
-    ```
-
-## Koyebへのデプロイ
-
-1.  このリポジトリをGitHubなどにプッシュします。
-2.  Koyebのコントロールパネルで新しいAppを作成し、デプロイ方法として「Git」を選択します。
-3.  リポジトリとブランチを指定します。
-4.  Koyebは自動的に`Dockerfile`を検出し、ビルドプロセスを開始します。
-5.  **環境変数を設定します**: Koyebのサービス設定で、以下の環境変数を設定してください:
-    -   `DISCORD_BOT_TOKEN`
-    -   `GEMINI_API_KEY`
-    -   `VOICEVOX_MODEL_ID` (例: `"0"`)
-    -   `VOICEVOX_STYLE_ID` (例: `8`)
-    -   `SPOTIPY_CLIENT_ID` (Spotify検索機能を使用する場合)
-    -   `SPOTIPY_CLIENT_SECRET` (Spotify検索機能を使用する場合)
-6.  デプロイが完了すると、Botが起動します。
-
-## コマンド一覧 (スラッシュコマンド)
-
--   `/hello`: Botが挨拶を返します。
--   `/join`: Botをあなたのいるボイスチャンネルに参加させます。
--   `/leave`: Botをボイスチャンネルから切断します。
--   `/speak [text_to_speak]`: 指定されたテキストを読み上げます。
-    -   `text_to_speak` (必須): 読み上げる内容。
--   `/ask [query]`: Geminiに質問し、テキストと音声で回答を得ます。
-    -   `query` (必須): Geminiへの質問内容。
--   `/search_spotify [query] (visible_to_others)`: Spotifyで曲を検索します。
-    -   `query` (必須): 検索する曲名やアーティスト名。
-    -   `visible_to_others` (オプション, デフォルト: True): 検索結果を他の人にも表示するかどうかを指定します。`False` にすると自分だけに表示されます。
+**Bot Permissions:**
+- Send Messages
+- Embed Links
+- Connect
+- Speak
 
 ## 注意事項
 
-> [!WARNING]
-> **APIキー/トークンの取り扱いに関する重要事項:**
->
-> Botを正常に動作させるためには、各種APIキーやDiscord Botトークンを正しく設定することが不可欠です。これらの情報が間違っている場合、関連する機能が一切利用できません。
->
-> APIキーやBotトークンは非常に重要な機密情報です。これらの情報が漏洩すると、悪意のある第三者によって不正利用される可能性があります。以下の点に最大限の注意を払ってください:
-> - **`.env` ファイルの管理:** `.env` ファイルにはAPIキーなどの機密情報が含まれます。このファイルをGitリポジトリに絶対にコミットしないでください。プロジェクトの `.gitignore` ファイルに `.env` が記載されていることを必ず確認してください。
-> - **公開リポジトリでの注意:** Publicなリポジトリで開発する場合、フォークされた際にも環境変数の内容が意図せず公開されてしまうことがないよう、十分注意してください。
-> - **最小権限の原則:** APIキーには、Botの動作に必要な最小限の権限のみを付与するようにしてください。
-> - **漏洩時の対応:** 万が一APIキーが漏洩した疑いがある場合は、速やかに該当のキーを無効化し、再発行する手続きを行ってください。
+- VoiceVoxモデルファイルは`voicevox_files/models/`に配置
+- APIキーは`.env`ファイルで管理（`.gitignore`に追加済み）
+- スラッシュコマンドの反映には数分かかる場合があります
 
-> [!NOTE]
-> Botを初めてサーバーに追加した際や、コマンドの定義を変更 (追加/削除/修正) した直後は、スラッシュコマンドがDiscordクライアントに反映されるまで数分から数十分程度かかることがあります。すぐにコマンドが表示されない場合は、しばらく時間をおいてから再度確認してみてください。
+## キャラクター
 
-- Discord Botの権限設定で、(もし `intents.message_content` を有効にしている場合は)「メッセージコンテンツの読み取り」が有効になっていることを確認してください。スラッシュコマンドのみの場合は通常不要です。
+「つむぎ」は埼玉県出身の高校生という設定で、親しみやすい関西弁で話します。
