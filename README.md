@@ -83,3 +83,7 @@ Discord Developer Portalで以下の権限を設定：
 ## キャラクター
 
 「つむぎ」は埼玉県出身の高校生という設定で、親しみやすい関西弁で話します。
+
+## クレジット
+
+- **音声合成**: [VOICEVOX: 春日部つむぎ](https://voicevox.hiroshiba.jp/)
