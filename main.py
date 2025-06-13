@@ -69,8 +69,46 @@ async def on_ready():
         import traceback
         traceback.print_exc()
 
+def validate_environment():
+    """環境変数の検証を行う"""
+    errors = []
+    
+    if not DISCORD_BOT_TOKEN:
+        errors.append("DISCORD_BOT_TOKEN が設定されていません。")
+    elif len(DISCORD_BOT_TOKEN.strip()) < 50:  # Discord トークンの最小長をチェック
+        errors.append("DISCORD_BOT_TOKEN が無効な形式です。")
+    
+    if not os.getenv("GEMINI_API_KEY"):
+        errors.append("GEMINI_API_KEY が設定されていません。")
+    
+    # VOICEVOX設定の検証
+    model_id = os.getenv("VOICEVOX_MODEL_ID", "0")
+    if not model_id.isdigit():
+        errors.append("VOICEVOX_MODEL_ID は数字である必要があります。")
+    
+    style_id = os.getenv("VOICEVOX_STYLE_ID", "8")
+    try:
+        int(style_id)
+    except ValueError:
+        errors.append("VOICEVOX_STYLE_ID は数字である必要があります。")
+    
+    return errors
+
 if __name__ == "__main__":
-    if DISCORD_BOT_TOKEN:
+    # 環境変数の検証
+    validation_errors = validate_environment()
+    if validation_errors:
+        print("環境変数エラー:")
+        for error in validation_errors:
+            print(f"  - {error}")
+        print("\n.envファイルを確認してください。")
+        exit(1)
+    
+    try:
         client.run(DISCORD_BOT_TOKEN)
-    else:
-        print("エラー: Discord Botトークンが設定されていません。") 
+    except discord.LoginFailure:
+        print("エラー: Discord Botトークンが無効です。正しいトークンを設定してください。")
+        exit(1)
+    except Exception as e:
+        print(f"予期しないエラーが発生しました: {e}")
+        exit(1) 

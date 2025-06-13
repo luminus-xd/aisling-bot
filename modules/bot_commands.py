@@ -6,6 +6,7 @@ from modules.voicevox import VoiceVoxHandler
 from modules.gemini_api import GeminiHandler
 from cogs.spotify_cog import SpotifyCog
 from cogs.youtube_cog import YouTubeCog
+from utils.rate_limiter import discord_message_limiter
 
 class BasicCommandsCog(commands.Cog):
     def __init__(self, bot: discord.Client):
@@ -113,6 +114,64 @@ class AICommandsCog(commands.Cog):
         self.gemini_handler = gemini_handler
         self.voice_handler = voice_handler
         
+    async def _send_text_response(self, interaction: discord.Interaction, response_text: str):
+        """レスポンステキストを適切に分割して送信する"""
+        max_length = 2000
+        chunks = [response_text[i:i + max_length] for i in range(0, len(response_text), max_length)]
+        first_chunk = True
+        
+        for chunk in chunks:
+            # レート制限を適用
+            await discord_message_limiter.acquire()
+            
+            if first_chunk:
+                await interaction.followup.send(chunk)  # 最初のメッセージはfollowupで
+                first_chunk = False
+            else:
+                await interaction.channel.send(chunk)  # 2つ目以降の長いメッセージはchannel.send
+    
+    async def _handle_voice_synthesis(self, interaction: discord.Interaction, response_text: str):
+        """音声合成と再生を処理する"""
+        voice_client = interaction.guild.voice_client
+        if not voice_client or not voice_client.is_connected():
+            return
+        
+        speech_segments = self.gemini_handler.split_text_for_speech(response_text)
+        
+        for i, segment in enumerate(speech_segments):
+            # ボイス接続状態を再確認
+            if not voice_client or not voice_client.is_connected():
+                print("読み上げ中にボイスチャンネルから切断されました。")
+                break
+            
+            # 再生中かチェック
+            if voice_client.is_playing():
+                print("現在他の音声を再生中です。このセグメントの読み上げをスキップします。")
+                await asyncio.sleep(1)  # 少し待つ
+                continue
+
+            # 音声合成と再生
+            success = await self._synthesize_and_play_segment(interaction, segment, voice_client)
+            if not success:
+                break
+                
+            # セグメント間の待機時間
+            if i < len(speech_segments) - 1:
+                await asyncio.sleep(0.5)
+    
+    async def _synthesize_and_play_segment(self, interaction: discord.Interaction, segment: str, voice_client) -> bool:
+        """個別セグメントの音声合成と再生"""
+        audio_data = await self.voice_handler.synthesize_voice(segment)
+        if audio_data:
+            success = await self.voice_handler.play_audio_in_vc(voice_client, audio_data)
+            if not success:
+                await interaction.channel.send(f"セグメント「{segment[:20]}...」の音声再生に失敗しました。")
+                return False
+            return True
+        else:
+            await interaction.channel.send(f"セグメント「{segment[:20]}...」の音声生成に失敗しました。")
+            return False
+
     @app_commands.command(name="ask", description="つむぎに質問し、応答をテキストと音声で返します。")
     @app_commands.describe(query="つむぎへの質問内容")
     async def ask_command(self, interaction: discord.Interaction, query: str):
@@ -123,55 +182,25 @@ class AICommandsCog(commands.Cog):
         await interaction.response.defer()  # Geminiからの応答待ちのため、応答を保留
 
         try:
+            # AI応答を生成
             success, response_text = await self.gemini_handler.generate_response(query)
             
-            if response_text:
-                # 応答をテキストで送信
-                max_length = 2000
-                chunks = [response_text[i:i + max_length] for i in range(0, len(response_text), max_length)]
-                first_chunk = True
-                for chunk in chunks:
-                    if first_chunk:
-                        await interaction.followup.send(chunk)  # 最初のメッセージはfollowupで
-                        first_chunk = False
-                    else:
-                        await interaction.channel.send(chunk)  # 2つ目以降の長いメッセージはchannel.send
-            else:
+            if not response_text:
                 await interaction.followup.send("つむぎから応答がありませんでした。")
                 return
-
-            # ボイスチャンネルに参加していれば、応答を読み上げる
-            if interaction.guild.voice_client and interaction.guild.voice_client.is_connected():
-                speech_segments = self.gemini_handler.split_text_for_speech(response_text)
-                
-                for i, segment in enumerate(speech_segments):
-                    if not interaction.guild.voice_client or not interaction.guild.voice_client.is_connected():
-                        print("読み上げ中にボイスチャンネルから切断されました。")
-                        break
-                    
-                    if interaction.guild.voice_client.is_playing():
-                        print("現在他の音声を再生中です。このセグメントの読み上げをスキップします。")
-                        await asyncio.sleep(1)  # 少し待つ
-                        continue
-
-                    audio_data = await self.voice_handler.synthesize_voice(segment)
-                    if audio_data:
-                        success = await self.voice_handler.play_audio_in_vc(interaction.guild.voice_client, audio_data)
-                        if not success:
-                            await interaction.channel.send(f"セグメント「{segment[:20]}...」の音声再生に失敗しました。")
-                            break
-                        if i < len(speech_segments) - 1:
-                            await asyncio.sleep(0.5)
-                    else:
-                        await interaction.channel.send(f"セグメント「{segment[:20]}...」の音声生成に失敗しました。")
-                        break
+            
+            # テキスト応答を送信
+            await self._send_text_response(interaction, response_text)
+            
+            # 音声合成と再生（ボイスチャンネルに接続している場合）
+            await self._handle_voice_synthesis(interaction, response_text)
 
         except Exception as e:
             print(f"Gemini APIリクエストまたは音声合成中にエラーが発生しました: {e}")
             if not interaction.response.is_done():
-                await interaction.response.send_message(f"申し訳ありません、処理中にエラーが発生しました。 {e}", ephemeral=True)
+                await interaction.response.send_message("申し訳ありません、処理中にエラーが発生しました。", ephemeral=True)
             else:
-                await interaction.followup.send(f"申し訳ありません、処理中にエラーが発生しました。 {e}")
+                await interaction.followup.send("申し訳ありません、処理中にエラーが発生しました。")
 
 
 def setup_cogs(bot: discord.Client, voice_handler: VoiceVoxHandler, gemini_handler: GeminiHandler, tree: app_commands.CommandTree):

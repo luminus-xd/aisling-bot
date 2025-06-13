@@ -45,7 +45,7 @@ class GeminiHandler:
                 
         except Exception as e:
             print(f"Gemini APIリクエスト中にエラーが発生しました: {e}")
-            return False, f"申し訳ありません、処理中にエラーが発生しました。 {e}"
+            return False, "申し訳ありません、処理中にエラーが発生しました。"
     
     async def generate_youtube_summary(self, youtube_url: str):
         """YouTube URLを使用してGemini APIで動画要約を生成する"""
@@ -82,7 +82,7 @@ class GeminiHandler:
                 
         except Exception as e:
             print(f"YouTube動画要約中にエラーが発生しました: {e}")
-            return False, f"YouTube動画の処理中にエラーが発生しました: {str(e)}"
+            return False, "YouTube動画の処理中にエラーが発生しました。"
             
     def split_text_for_speech(self, text: str, max_length: int = 120):
         """音声合成用にテキストを適切なセグメントに分割する"""

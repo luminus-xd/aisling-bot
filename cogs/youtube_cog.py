@@ -5,6 +5,7 @@ from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, No
 from youtube_transcript_api.formatters import TextFormatter
 import re
 from modules.gemini_api import GeminiHandler
+from utils.url_validator import URLValidator
 
 class YouTubeCog(commands.Cog):
     def __init__(self, bot, gemini_handler: GeminiHandler, voice_handler=None):
@@ -13,18 +14,12 @@ class YouTubeCog(commands.Cog):
         self.voice_handler = voice_handler
         
     def extract_video_id(self, url: str) -> str:
-        """YouTube URLから動画IDを抽出する"""
-        patterns = [
-            r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})',
-            r'youtube\.com\/v\/([a-zA-Z0-9_-]{11})',
-            r'youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})'
-        ]
+        """YouTube URLから動画IDを抽出する（検証強化版）"""
+        # URLをサニタイズ
+        url = URLValidator.sanitize_url(url)
         
-        for pattern in patterns:
-            match = re.search(pattern, url)
-            if match:
-                return match.group(1)
-        return ""
+        # YouTube URLの検証とID抽出
+        return URLValidator.extract_youtube_video_id(url)
     
     def get_youtube_thumbnail_url(self, video_id: str) -> str:
         """YouTube動画IDからサムネイルURLを生成する"""
@@ -49,9 +44,9 @@ class YouTubeCog(commands.Cog):
             formatter = TextFormatter()
             transcript_text = formatter.format_transcript(transcript_list)
             
-            # 長すぎる場合は切り詰める（Gemini APIの制限を考慮）
-            if len(transcript_text) > 50000:
-                transcript_text = transcript_text[:50000] + "...(以下省略)"
+            # 長すぎる場合は切り詰める（50分程度の動画まで対応: 300,000文字）
+            if len(transcript_text) > 300000:
+                transcript_text = transcript_text[:300000] + "...(以下省略)"
                 
             return True, transcript_text
             
@@ -69,10 +64,20 @@ class YouTubeCog(commands.Cog):
             await interaction.response.send_message("YouTube動画のURLを入力してください。", ephemeral=True)
             return
             
+        # URLの基本検証
+        if not URLValidator.is_valid_url(url):
+            await interaction.response.send_message("有効なURLを入力してください。", ephemeral=True)
+            return
+        
+        # YouTube URLかどうか検証
+        if not URLValidator.is_youtube_url(url):
+            await interaction.response.send_message("YouTube URLを入力してください。", ephemeral=True)
+            return
+        
         # 動画IDを抽出
         video_id = self.extract_video_id(url)
         if not video_id:
-            await interaction.response.send_message("有効なYouTube URLを入力してください。", ephemeral=True)
+            await interaction.response.send_message("有効なYouTube動画URLを入力してください。", ephemeral=True)
             return
             
         try:
