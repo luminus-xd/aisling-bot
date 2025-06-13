@@ -7,9 +7,15 @@ import traceback
 class VoiceVoxHandler:
     def __init__(self):
         self.synthesizer = None
-        # 環境変数から設定を読み込む
+        # 環境変数から設定を読み込む（検証付き）
         self.model_id = os.getenv("VOICEVOX_MODEL_ID", "0")  # デフォルトを "0" (0.vvm) に
-        self.style_id = int(os.getenv("VOICEVOX_STYLE_ID", "8"))  # デフォルトを 8 (ノーマルスタイル等を想定)
+        
+        # VOICEVOX_STYLE_IDの検証
+        try:
+            self.style_id = int(os.getenv("VOICEVOX_STYLE_ID", "8"))  # デフォルトを 8 (ノーマルスタイル等を想定)
+        except (ValueError, TypeError):
+            print("警告: VOICEVOX_STYLE_IDが無効な値です。デフォルト値8を使用します。")
+            self.style_id = 8
     
     async def initialize(self):
         """VoiceVox Synthesizerを初期化する"""
@@ -89,13 +95,31 @@ class VoiceVoxHandler:
 
         try:
             # 音声データをBytesIOに変換
-            audio_source = discord.FFmpegPCMAudio(io.BytesIO(audio_data), pipe=True)
+            audio_stream = io.BytesIO(audio_data)
+            audio_source = discord.FFmpegPCMAudio(audio_stream, pipe=True)
             
             if not voice_client.is_playing():
-                voice_client.play(audio_source, after=lambda e: print(f'再生終了: {e}' if e else ''))
+                def after_playing(error):
+                    if error:
+                        print(f'再生エラー: {error}')
+                    else:
+                        print('再生終了')
+                    # リソースのクリーンアップ
+                    try:
+                        audio_source.cleanup()
+                        audio_stream.close()
+                    except Exception as cleanup_error:
+                        print(f'リソースクリーンアップエラー: {cleanup_error}')
+                
+                voice_client.play(audio_source, after=after_playing)
                 return True
             else:
-                # すでに再生中の場合
+                # すでに再生中の場合はリソースをクリーンアップ
+                try:
+                    audio_source.cleanup()
+                    audio_stream.close()
+                except Exception as cleanup_error:
+                    print(f'リソースクリーンアップエラー: {cleanup_error}')
                 return False
         except Exception as e:
             print(f"音声再生中にエラーが発生しました: {e}")
